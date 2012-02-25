@@ -6,7 +6,6 @@ import static com.bimbr.clisson.util.Arguments.nonNull;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URISyntaxException;
-import java.util.Date;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
