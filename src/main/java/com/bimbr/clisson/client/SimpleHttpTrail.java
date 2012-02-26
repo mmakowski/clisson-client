@@ -1,5 +1,6 @@
 package com.bimbr.clisson.client;
 
+import static com.bimbr.clisson.protocol.Types.id;
 import static com.bimbr.clisson.util.Arguments.nonEmpty;
 import static com.bimbr.clisson.util.Arguments.nonNull;
 
@@ -69,7 +70,7 @@ public class SimpleHttpTrail implements Trail {
 
     private void sendEvent(Event event) {
         try {
-            final HttpPost request = post("/event/" + event.getClass().getSimpleName().toLowerCase());
+            final HttpPost request = post("/event/" + id(event.getClass()));
             request.setEntity(entityFor(event));
             sendRequest(request);
         } catch (Exception e) {
