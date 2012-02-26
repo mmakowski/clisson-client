@@ -4,15 +4,14 @@ import org.mortbay.jetty.handler.AbstractHandler
 import org.mortbay.jetty.Server
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
-
-import com.bimbr.clisson.protocol.CheckpointEvent
+import com.bimbr.clisson.protocol.Checkpoint
 import com.bimbr.clisson.protocol.EventHeader
 import com.bimbr.clisson.protocol.Json
 import com.bimbr.util.Clock
-
 import javax.servlet.http.HttpServletRequest
 import javax.servlet.http.HttpServletResponse
 import javax.servlet.ServletInputStream
+import com.bimbr.clisson.protocol.Checkpoint
 
 class SimpleHttpTrailSpec extends Specification with Mockito {
   "SimpleHttpTrail" should {
@@ -25,11 +24,11 @@ class SimpleHttpTrailSpec extends Specification with Mockito {
       new SimpleHttpTrail(Host, Port, "") must throwAn [IllegalArgumentException]
     }
     
-    "send a POST request with event JSON to /checkpointevent when checkpoint() is called" in {
+    "send a POST request with event JSON to /event/checkpoint when checkpoint() is called" in {
       val server = new TestServer() start ()
       try {
         Trail checkpoint (Priority, MsgId, Description)
-        server.requestReceived mustEqual Some(("POST", "/checkpointevent", Json.jsonFor(Checkpoint))) 
+        server.requestReceived mustEqual Some(("POST", "/event/checkpoint", Json.jsonFor(Checkpoint))) 
       } finally {
         server stop ()
       }
@@ -75,5 +74,5 @@ class SimpleHttpTrailSpec extends Specification with Mockito {
   val Priority = 13
   val MsgId = "msg-1"
   val Description = "test checkpoint"
-  val Checkpoint = new CheckpointEvent(new EventHeader(SrcId, Timestamp, Priority), MsgId, Description)
+  val Checkpoint = new Checkpoint(new EventHeader(SrcId, Timestamp, Priority), MsgId, Description)
 }

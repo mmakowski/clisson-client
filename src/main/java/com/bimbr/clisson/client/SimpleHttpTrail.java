@@ -16,7 +16,7 @@ import org.apache.http.client.utils.URIUtils;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
 
-import com.bimbr.clisson.protocol.CheckpointEvent;
+import com.bimbr.clisson.protocol.Checkpoint;
 import com.bimbr.clisson.protocol.Event;
 import com.bimbr.clisson.protocol.EventHeader;
 import com.bimbr.clisson.protocol.Json;
@@ -63,13 +63,13 @@ public class SimpleHttpTrail implements Trail {
      */
     public void checkpoint(int priority, String messageId, String description) {
         final EventHeader header = new EventHeader(sourceId, clock.getTime(), priority);
-        final CheckpointEvent event = new CheckpointEvent(header, messageId, description);
+        final Checkpoint event = new Checkpoint(header, messageId, description);
         sendEvent(event);
     }
 
     private void sendEvent(Event event) {
         try {
-            final HttpPost request = post("/" + event.getClass().getSimpleName().toLowerCase());
+            final HttpPost request = post("/event/" + event.getClass().getSimpleName().toLowerCase());
             request.setEntity(entityFor(event));
             sendRequest(request);
         } catch (Exception e) {
