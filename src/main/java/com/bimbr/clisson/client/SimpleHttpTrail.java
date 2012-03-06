@@ -1,12 +1,13 @@
 package com.bimbr.clisson.client;
 
-import static com.bimbr.clisson.protocol.Types.id;
 import static com.bimbr.clisson.util.Arguments.nonEmpty;
 import static com.bimbr.clisson.util.Arguments.nonNull;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URISyntaxException;
+import java.util.Set;
+import java.util.TreeSet;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -17,9 +18,7 @@ import org.apache.http.client.utils.URIUtils;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
 
-import com.bimbr.clisson.protocol.Checkpoint;
 import com.bimbr.clisson.protocol.Event;
-import com.bimbr.clisson.protocol.EventHeader;
 import com.bimbr.clisson.protocol.Json;
 import com.bimbr.util.Clock;
 
@@ -60,17 +59,18 @@ public class SimpleHttpTrail implements Trail {
     }
     
     /**
-     * @see Trail#checkpoint(int, String, String)
+     * @see Trail#checkpoint(String, String)
      */
-    public void checkpoint(int priority, String messageId, String description) {
-        final EventHeader header = new EventHeader(sourceId, clock.getTime(), priority);
-        final Checkpoint event = new Checkpoint(header, messageId, description);
+    public void checkpoint(String messageId, String description) {
+        final Set<String> messageIds = new TreeSet<String>();
+        messageIds.add(messageId);
+        final Event event = new Event(sourceId, clock.getTime(), messageIds, messageIds, description);
         sendEvent(event);
     }
 
     private void sendEvent(Event event) {
         try {
-            final HttpPost request = post("/event/" + id(event.getClass()));
+            final HttpPost request = post("/event");
             request.setEntity(entityFor(event));
             sendRequest(request);
         } catch (Exception e) {

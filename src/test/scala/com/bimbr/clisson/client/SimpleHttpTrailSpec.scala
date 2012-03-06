@@ -1,34 +1,34 @@
 package com.bimbr.clisson.client
 
+import javax.servlet.http.HttpServletRequest
+import javax.servlet.http.HttpServletResponse
+import javax.servlet.ServletInputStream
+import scala.collection.JavaConversions._
+
+import org.junit.runner.RunWith
 import org.mortbay.jetty.handler.AbstractHandler
 import org.mortbay.jetty.Server
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
-import com.bimbr.clisson.protocol.Checkpoint
-import com.bimbr.clisson.protocol.EventHeader
-import com.bimbr.clisson.protocol.Json
-import com.bimbr.util.Clock
-import javax.servlet.http.HttpServletRequest
-import javax.servlet.http.HttpServletResponse
-import javax.servlet.ServletInputStream
-import com.bimbr.clisson.protocol.Checkpoint
+import org.specs2.runner.JUnitRunner
 
+import com.bimbr.clisson.protocol.{ Event, Json }
+import com.bimbr.util.Clock
+
+@RunWith(classOf[JUnitRunner])
 class SimpleHttpTrailSpec extends Specification with Mockito {
   "SimpleHttpTrail" should {
-    
     "require non-empty sever hostname on construction" in {
       new SimpleHttpTrail("", Port, SrcId) must throwAn [IllegalArgumentException]
     }
-    
     "require non-empty source id on construction" in {
       new SimpleHttpTrail(Host, Port, "") must throwAn [IllegalArgumentException]
     }
-    
-    "send a POST request with event JSON to /event/checkpoint when checkpoint() is called" in {
+    "send a POST request with checkpoint event JSON to /event when checkpoint() is called" in {
       val server = new TestServer() start ()
       try {
-        Trail checkpoint (Priority, MsgId, Description)
-        server.requestReceived mustEqual Some(("POST", "/event/checkpoint", Json.jsonFor(Checkpoint))) 
+        Trail checkpoint (MsgId, Description)
+        server.requestReceived mustEqual Some(("POST", "/event", Json.jsonFor(Checkpoint))) 
       } finally {
         server stop ()
       }
@@ -71,8 +71,8 @@ class SimpleHttpTrailSpec extends Specification with Mockito {
   val Port = 31401
   val SrcId = "srcId";
   val Trail = new SimpleHttpTrail(Host, Port, SrcId, Clock)
-  val Priority = 13
+
   val MsgId = "msg-1"
   val Description = "test checkpoint"
-  val Checkpoint = new Checkpoint(new EventHeader(SrcId, Timestamp, Priority), MsgId, Description)
+  val Checkpoint = new Event(SrcId, Timestamp, Set(MsgId), Set(MsgId), Description)
 }

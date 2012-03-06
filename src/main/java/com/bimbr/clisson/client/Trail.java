@@ -9,9 +9,8 @@ package com.bimbr.clisson.client;
 public interface Trail {
     /**
      * Adds a {@link com.bimbr.clisson.protocol.CheckpointEvent} to the trail.
-     * @param priority the priority of the event
      * @param messageId the id of the message that arrived at a checkpoint
      * @param description description of the checkpoint
      */
-    void checkpoint(int priority, String messageId, String description);
+    void checkpoint(String messageId, String description);
 }
