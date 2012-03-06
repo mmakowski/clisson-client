@@ -23,12 +23,12 @@ import com.bimbr.clisson.protocol.Json;
 import com.bimbr.util.Clock;
 
 /**
- * A {@link Trail} implementation that sends events over HTTP as they are reported by the calling code.
+ * A {@link ClissonClient} implementation that sends events over HTTP as they are reported by the calling code.
  * 
  * @author mmakowski
  * @since 1.0.0
  */
-public class SimpleHttpTrail implements Trail {
+public class SimpleHttpClient implements ClissonClient {
     private final String serverHost;
     private final int serverPort;
     private final String sourceId;
@@ -41,14 +41,14 @@ public class SimpleHttpTrail implements Trail {
      * @param serverPort the port on which Clisson server is listening
      * @param sourceId the id of the component that is the source of events
      */
-    public SimpleHttpTrail(final String serverHost,
+    public SimpleHttpClient(final String serverHost,
                            final int    serverPort,
                            final String sourceId) {
         this(serverHost, serverPort, sourceId, new Clock());
     }
     
     // allows to set custom clock (for unit testing)
-    SimpleHttpTrail(final String serverHost,
+    SimpleHttpClient(final String serverHost,
                     final int    serverPort,
                     final String sourceId,
                     final Clock  clock) {
@@ -59,7 +59,7 @@ public class SimpleHttpTrail implements Trail {
     }
     
     /**
-     * @see Trail#checkpoint(String, String)
+     * @see ClissonClient#checkpoint(String, String)
      */
     public void checkpoint(String messageId, String description) {
         final Set<String> messageIds = new TreeSet<String>();

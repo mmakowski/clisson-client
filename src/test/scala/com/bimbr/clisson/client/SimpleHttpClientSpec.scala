@@ -19,15 +19,15 @@ import com.bimbr.util.Clock
 class SimpleHttpTrailSpec extends Specification with Mockito {
   "SimpleHttpTrail" should {
     "require non-empty sever hostname on construction" in {
-      new SimpleHttpTrail("", Port, SrcId) must throwAn [IllegalArgumentException]
+      new SimpleHttpClient("", Port, SrcId) must throwAn [IllegalArgumentException]
     }
     "require non-empty source id on construction" in {
-      new SimpleHttpTrail(Host, Port, "") must throwAn [IllegalArgumentException]
+      new SimpleHttpClient(Host, Port, "") must throwAn [IllegalArgumentException]
     }
     "send a POST request with checkpoint event JSON to /event when checkpoint() is called" in {
       val server = new TestServer() start ()
       try {
-        Trail checkpoint (MsgId, Description)
+        Client checkpoint (MsgId, Description)
         server.requestReceived mustEqual Some(("POST", "/event", Json.jsonFor(Checkpoint))) 
       } finally {
         server stop ()
@@ -70,7 +70,7 @@ class SimpleHttpTrailSpec extends Specification with Mockito {
   val Host = "localhost"
   val Port = 31401
   val SrcId = "srcId";
-  val Trail = new SimpleHttpTrail(Host, Port, SrcId, Clock)
+  val Client = new SimpleHttpClient(Host, Port, SrcId, Clock)
 
   val MsgId = "msg-1"
   val Description = "test checkpoint"
