@@ -16,19 +16,28 @@ import com.bimbr.clisson.protocol.{ Event, Json }
 import com.bimbr.util.Clock
 
 @RunWith(classOf[JUnitRunner])
-class SimpleHttpTrailSpec extends Specification with Mockito {
+class SimpleHttpRecorderSpec extends Specification with Mockito {
   "SimpleHttpTrail" should {
     "require non-empty sever hostname on construction" in {
-      new SimpleHttpClient("", Port, SrcId) must throwAn [IllegalArgumentException]
+      new SimpleHttpRecorder("", Port, SrcId) must throwAn [IllegalArgumentException]
     }
     "require non-empty source id on construction" in {
-      new SimpleHttpClient(Host, Port, "") must throwAn [IllegalArgumentException]
+      new SimpleHttpRecorder(Host, Port, "") must throwAn [IllegalArgumentException]
     }
     "send a POST request with checkpoint event JSON to /event when checkpoint() is called" in {
       val server = new TestServer() start ()
       try {
-        Client checkpoint (MsgId, Description)
+        Recorder checkpoint (MsgId, Description)
         server.requestReceived mustEqual Some(("POST", "/event", Json.jsonFor(Checkpoint))) 
+      } finally {
+        server stop ()
+      }
+    }
+    "send a POST request with generic event JSON to /event when event() is called" in {
+      val server = new TestServer() start ()
+      try {
+        Recorder event (InputMsgIds, OutputMsgIds, Description)
+        server.requestReceived mustEqual Some(("POST", "/event", Json.jsonFor(GenericEvent))) 
       } finally {
         server stop ()
       }
@@ -70,9 +79,12 @@ class SimpleHttpTrailSpec extends Specification with Mockito {
   val Host = "localhost"
   val Port = 31401
   val SrcId = "srcId";
-  val Client = new SimpleHttpClient(Host, Port, SrcId, Clock)
+  val Recorder = new SimpleHttpRecorder(Host, Port, SrcId, Clock)
 
   val MsgId = "msg-1"
   val Description = "test checkpoint"
   val Checkpoint = new Event(SrcId, Timestamp, Set(MsgId), Set(MsgId), Description)
+  val InputMsgIds = Set("msg-1", "msg-2")
+  val OutputMsgIds = Set("msg-3", "msg-4")
+  val GenericEvent = new Event(SrcId, Timestamp, InputMsgIds, OutputMsgIds, Description)
 }

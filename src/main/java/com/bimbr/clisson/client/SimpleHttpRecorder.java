@@ -17,18 +17,22 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URIUtils;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.bimbr.clisson.protocol.Event;
 import com.bimbr.clisson.protocol.Json;
 import com.bimbr.util.Clock;
 
 /**
- * A {@link ClissonClient} implementation that sends events over HTTP as they are reported by the calling code.
+ * A {@link Recorder} implementation that sends events over HTTP as they are reported by the calling code.
  * 
  * @author mmakowski
  * @since 1.0.0
  */
-public class SimpleHttpClient implements ClissonClient {
+public class SimpleHttpRecorder implements Recorder {
+    private static final Logger logger = LoggerFactory.getLogger(SimpleHttpRecorder.class);
+    
     private final String serverHost;
     private final int serverPort;
     private final String sourceId;
@@ -37,21 +41,21 @@ public class SimpleHttpClient implements ClissonClient {
 
     /**
      * @param serverHost the host name of Clisson server, not including protocol and port, e.g.
-     *                      {@code www.example.com} 
+     *                   {@code www.example.com} 
      * @param serverPort the port on which Clisson server is listening
      * @param sourceId the id of the component that is the source of events
      */
-    public SimpleHttpClient(final String serverHost,
-                           final int    serverPort,
-                           final String sourceId) {
+    public SimpleHttpRecorder(final String serverHost,
+                              final int    serverPort,
+                              final String sourceId) {
         this(serverHost, serverPort, sourceId, new Clock());
     }
     
     // allows to set custom clock (for unit testing)
-    SimpleHttpClient(final String serverHost,
-                    final int    serverPort,
-                    final String sourceId,
-                    final Clock  clock) {
+    SimpleHttpRecorder(final String serverHost,
+                       final int    serverPort,
+                       final String sourceId,
+                       final Clock  clock) {
         this.serverHost = nonEmpty(serverHost, "serverHost");
         this.serverPort = serverPort;
         this.sourceId = nonEmpty(sourceId, "sourceId");
@@ -59,12 +63,19 @@ public class SimpleHttpClient implements ClissonClient {
     }
     
     /**
-     * @see ClissonClient#checkpoint(String, String)
+     * @see Recorder#checkpoint(String, String)
      */
-    public void checkpoint(String messageId, String description) {
+    public void checkpoint(final String messageId, final String description) {
         final Set<String> messageIds = new TreeSet<String>();
         messageIds.add(messageId);
-        final Event event = new Event(sourceId, clock.getTime(), messageIds, messageIds, description);
+        event(messageIds, messageIds, description);
+    }
+
+    /**
+     * @see Recorder#event(Set, Set, String)
+     */
+    public void event(final Set<String> inputMessageIds, final Set<String> outputMessageIds, final String description) {
+        final Event event = new Event(sourceId, clock.getTime(), inputMessageIds, outputMessageIds, description);
         sendEvent(event);
     }
 
@@ -82,8 +93,7 @@ public class SimpleHttpClient implements ClissonClient {
         final HttpClient client = new DefaultHttpClient();
         final HttpResponse response = client.execute(request);
         if (response.getStatusLine().getStatusCode() >= 400) {
-            // TODO: better diagnostics
-            System.err.println(response);
+            logger.error("response to " + request.getMethod() + " " + request.getURI() + ": " + response);
         }
     }
 
