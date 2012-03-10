@@ -30,7 +30,7 @@ import com.bimbr.util.Clock;
  * @author mmakowski
  * @since 1.0.0
  */
-public class SimpleHttpRecorder implements Recorder {
+final class SimpleHttpRecorder implements Recorder {
     private static final Logger logger = LoggerFactory.getLogger(SimpleHttpRecorder.class);
     
     private final String serverHost;
