@@ -32,6 +32,6 @@ public final class RecorderFactory {
     public static Recorder getRecorder(final String sourceId) {
         final Config config = Config.fromPropertiesFile();
         final HttpInvoker invoker = new HttpInvoker(config.getHost(), config.getPort());
-        return new AsyncHttpRecorder(sourceId, invoker, new Clock());
+        return new AsyncHttpRecorder(sourceId, invoker, 1000, new Clock());
     }
 }

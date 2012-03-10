@@ -1,6 +1,6 @@
 package com.bimbr.clisson.client;
 
-import static com.bimbr.clisson.util.Arguments.nonEmpty;
+import static com.bimbr.clisson.util.Arguments.*;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -39,11 +39,6 @@ class HttpInvoker {
                        final int    serverPort) {
         this.serverHost = nonEmpty(serverHost, "serverHost");
         this.serverPort = positive(serverPort, "serverPort");
-    }
-
-    private static int positive(int arg, String argName) {
-        if (arg <= 0) throw new IllegalArgumentException(argName + " must be positive but was " + arg);
-        return arg;
     }
 
     public void post(String uri, String content) {
