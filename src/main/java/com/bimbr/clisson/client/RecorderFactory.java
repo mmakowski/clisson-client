@@ -1,5 +1,7 @@
 package com.bimbr.clisson.client;
 
+import com.bimbr.util.Clock;
+
 
 /**
  * A factory that constructs {@link Recorder}s based on the config specified in a properties file pointed to by 
@@ -28,7 +30,8 @@ public final class RecorderFactory {
      * @return a {@link Recorder} for specified source
      */
     public static Recorder getRecorder(final String sourceId) {
-        final Config config = Config.fromPropertiesFile(); 
-        return new SimpleHttpRecorder(config.getHost(), config.getPort(), sourceId);
+        final Config config = Config.fromPropertiesFile();
+        final HttpInvoker invoker = new HttpInvoker(config.getHost(), config.getPort());
+        return new AsyncHttpRecorder(sourceId, invoker, new Clock());
     }
 }
