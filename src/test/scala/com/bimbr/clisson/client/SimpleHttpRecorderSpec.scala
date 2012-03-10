@@ -19,24 +19,24 @@ import com.bimbr.util.Clock
 class SimpleHttpRecorderSpec extends Specification with Mockito {
   "SimpleHttpTrail" should {
     "require non-empty sever hostname on construction" in {
-      new SimpleHttpRecorder("", Port, SrcId) must throwAn [IllegalArgumentException]
+      new SimpleHttpRecorder("", PortBase, SrcId) must throwAn [IllegalArgumentException]
     }
     "require non-empty source id on construction" in {
-      new SimpleHttpRecorder(Host, Port, "") must throwAn [IllegalArgumentException]
+      new SimpleHttpRecorder(Host, PortBase, "") must throwAn [IllegalArgumentException]
     }
     "send a POST request with checkpoint event JSON to /event when checkpoint() is called" in {
-      val server = new TestServer() start ()
+      val server = new TestServer(1) start ()
       try {
-        Recorder checkpoint (MsgId, Description)
+        recorder(1) checkpoint (MsgId, Description)
         server.requestReceived mustEqual Some(("POST", "/event", Json.jsonFor(Checkpoint))) 
       } finally {
         server stop ()
       }
     }
     "send a POST request with generic event JSON to /event when event() is called" in {
-      val server = new TestServer() start ()
+      val server = new TestServer(2) start ()
       try {
-        Recorder event (InputMsgIds, OutputMsgIds, Description)
+        recorder(2) event (InputMsgIds, OutputMsgIds, Description)
         server.requestReceived mustEqual Some(("POST", "/event", Json.jsonFor(GenericEvent))) 
       } finally {
         server stop ()
@@ -44,9 +44,9 @@ class SimpleHttpRecorderSpec extends Specification with Mockito {
     }
   }
   
-  class TestServer {
+  class TestServer(instance: Int) {
     var requestReceived: Option[(String, String, String)] = None
-    private val jetty = new Server(Port)
+    private val jetty = new Server(PortBase + instance)
     jetty setHandler handler
     
     private object handler extends AbstractHandler {
@@ -77,9 +77,9 @@ class SimpleHttpRecorderSpec extends Specification with Mockito {
   val Clock = mock[Clock]
   Clock.getTime() returns Timestamp
   val Host = "localhost"
-  val Port = 31401
+  val PortBase = 31400
   val SrcId = "srcId";
-  val Recorder = new SimpleHttpRecorder(Host, Port, SrcId, Clock)
+  def recorder(instance: Int) = new SimpleHttpRecorder(Host, PortBase + instance, SrcId, Clock)
 
   val MsgId = "msg-1"
   val Description = "test checkpoint"
