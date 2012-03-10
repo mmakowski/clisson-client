@@ -71,9 +71,11 @@ final class AsyncHttpRecorder implements Recorder {
     }
     
     private void startHttpInvocationThread() {
+        logger.debug("staring HTTP invoker thread...");
         final Thread invocationThread = new Thread(new BufferProcessor(), "clisson-http-invoker");
         invocationThread.setDaemon(true);
         invocationThread.start();
+        logger.debug("HTTP invoker thread started");
     }
     
     private static interface HttpInvocation {
