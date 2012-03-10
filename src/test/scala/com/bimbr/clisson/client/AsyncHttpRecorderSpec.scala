@@ -27,11 +27,13 @@ class AsyncHttpRecorderSpec extends Specification with Mockito {
     "send a POST request with checkpoint event JSON to /event when checkpoint() is called" in {
       val invoker = mock[HttpInvoker]
       recorder(invoker) checkpoint (MsgId, Description)
+      Thread sleep MaxExpectedInvocationDelayMs
       there was one(invoker).post("/event", Json.jsonFor(Checkpoint)) 
     }
     "send a POST request with generic event JSON to /event when event() is called" in {
       val invoker = mock[HttpInvoker]
       recorder(invoker) event (InputMsgIds, OutputMsgIds, Description)
+      Thread sleep MaxExpectedInvocationDelayMs
       there was one(invoker).post("/event", Json.jsonFor(GenericEvent)) 
     }
     "have event() return immediately even when the invoker is slow" in {
@@ -39,7 +41,7 @@ class AsyncHttpRecorderSpec extends Specification with Mockito {
       val callStartTime = System.currentTimeMillis
       recorder(invoker) event (InputMsgIds, OutputMsgIds, Description)
       val elapsedTime = System.currentTimeMillis - callStartTime
-      elapsedTime must beLessThan (200L)
+      elapsedTime must beLessThan (MaxExpectedCallTimeMs)
     }
   }
 
@@ -63,4 +65,7 @@ class AsyncHttpRecorderSpec extends Specification with Mockito {
   
   def slowInvoker(timeToRespondInMillis: Int) = 
     mock[HttpInvoker].post(anyString, anyString) answers {_ => Thread sleep (timeToRespondInMillis) }
+  
+  val MaxExpectedInvocationDelayMs = 50
+  val MaxExpectedCallTimeMs = 100L
 }
