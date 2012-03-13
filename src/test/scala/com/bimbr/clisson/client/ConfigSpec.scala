@@ -10,44 +10,44 @@ import org.specs2.runner.JUnitRunner
 class ConfigSpec extends Specification {
   "Config construction" should {
     // these tests modify system properties so can't be run in parallel
-    "use classpath's clisson.properties if clisson.config system property is not specified" in synchronized {
+    "use classpath's clisson.properties if clisson.config system property is not specified" in globally.synchronized {
       useDefaultConfig()
       val config = Config fromPropertiesFile()
       (config.getHost, config.getPort) mustEqual ("host.from.default.config", 1441)
     }
-    "require that config path is prefixed with classpath:// or file://" in synchronized {
+    "require that config path is prefixed with classpath:// or file://" in globally.synchronized {
       useConfig("clisson.properties")
       Config fromPropertiesFile() must throwAn [IllegalStateException].like {
         case e => e.getMessage must (contain("classpath://") and contain("file://"))
       }
     }
-    "report missing file's name when config file is missing from classpath" in synchronized {
+    "report missing file's name when config file is missing from classpath" in globally.synchronized {
       val missingPath = "classpath://missing.properties"
       useConfig(missingPath)
       Config fromPropertiesFile() must throwAn [IllegalStateException].like {
         case e => e.getMessage must contain (missingPath)
       }
     }
-    "require that clisson.server.host property is non-empty" in synchronized {
+    "require that clisson.server.host property is non-empty" in globally.synchronized {
       useConfig("classpath://empty-host.properties")
       Config fromPropertiesFile() must throwAn [Config.ConfigException].like {
         case e => e.getMessage must contain ("clisson.server.host")
       }
     }
-    "require that clisson.server.port property is a positive integer" in synchronized {
+    "require that clisson.server.port property is a positive integer" in globally.synchronized {
       useConfig("classpath://negative-port.properties")
       Config fromPropertiesFile() must throwAn [Config.ConfigException].like {
         case e => e.getMessage must contain ("clisson.server.port")
       }
     }
-    "report the missing file's name when config is missing from filesystem" in synchronized {
+    "report the missing file's name when config is missing from filesystem" in globally.synchronized {
       val missingPath = "file://does/not/exist.properties"
       useConfig(missingPath)
       Config fromPropertiesFile() must throwAn [IllegalStateException].like {
         case e => e.getMessage must contain (missingPath)
       }
     }
-    "search the filesystem when path is prefixed with file://" in synchronized {
+    "search the filesystem when path is prefixed with file://" in globally.synchronized {
       useFileConfig("valid.properties")
       val config = Config fromPropertiesFile()
       (config.getHost, config.getPort) mustEqual ("valid.host", 4114)

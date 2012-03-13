@@ -13,14 +13,16 @@ import TestServer.withServerOn
 @RunWith(classOf[JUnitRunner])
 class RecorderFactorySpec extends Specification {
   "RecorderFactory" should {
-    "create a recorder capable of submitting a valid event to the server" in withServerOn(37171) { server =>
-      System setProperty ("clisson.config", "classpath://local-test.properties")
-      val recorder = RecorderFactory.getRecorder(SrcId)
-      System clearProperty "clisson.config"
-      recorder.event(InputMsgIds, OutputMsgIds, Description)
-      Thread sleep 500 // submission is asynchronous, but should be quick
-      server.requestReceived must beSome.like {
-        case ("POST", "/event", str) => Json.fromJson[Event](str, classOf[Event]).getDescription mustEqual Description  
+    "create a recorder capable of submitting a valid event to the server" in globally.synchronized { 
+      withServerOn(37171) { server =>
+        System setProperty ("clisson.config", "classpath://local-test.properties")
+        val recorder = RecorderFactory.getRecorder(SrcId)
+        System clearProperty "clisson.config"
+        recorder.event(InputMsgIds, OutputMsgIds, Description)
+        Thread sleep 500 // submission is asynchronous, but should be quick
+        server.requestReceived must beSome.like {
+          case ("POST", "/event", str) => Json.fromJson[Event](str, classOf[Event]).getDescription mustEqual Description  
+        }
       }
     }
   }
