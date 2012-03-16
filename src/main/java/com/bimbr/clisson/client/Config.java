@@ -15,32 +15,30 @@ import java.util.Properties;
  * @author mmakowski
  * @since 1.0.0
  */
-class Config {
+public class Config {
     private static final String CLASSPATH_PREFIX = "classpath://";
     private static final String FILE_PREFIX = "file://";
     private static final String CONFIG_PROPERTY = "clisson.config";
     private static final String DEFAULT_CONFIG_PATH = CLASSPATH_PREFIX + "clisson.properties";
     
-    private static final String SERVER_HOST = "clisson.server.host";
-    private static final String SERVER_PORT = "clisson.server.port";
+    protected static final String SERVER_HOST = "clisson.server.host";
+    protected static final String SERVER_PORT = "clisson.server.port";
     
     private final String host;
     private final int port;
     
     public static Config fromPropertiesFile() {
-        final String path = propertiesPath();
-        final Properties properties = propertiesFromFile(path);
-        validate(properties, path);
+        final Properties properties = validatedProperties(new PropertyValidator());
         return new Config(properties.getProperty(SERVER_HOST), Integer.valueOf(properties.getProperty(SERVER_PORT)));
     }
     
-    private static void validate(Properties properties, String configPath) {
-        final String host = properties.getProperty(SERVER_HOST);
-        if (host == null || host.length() == 0) throw new ConfigException(configPath, SERVER_HOST + " must be set to a non-empty host name");
-        final String portStr = properties.getProperty(SERVER_PORT);
-        if (portStr == null || Integer.valueOf(portStr) <= 0) throw new ConfigException(configPath, SERVER_PORT + " must be set to a positive integer");
+    protected static Properties validatedProperties(PropertyValidator propertyValidator) {
+        final String path = propertiesPath();
+        final Properties properties = propertiesFromFile(path);
+        propertyValidator.validate(properties, path);
+        return properties;
     }
-
+ 
     private static String propertiesPath() {
         return System.getProperty(CONFIG_PROPERTY, DEFAULT_CONFIG_PATH);
     }
@@ -89,7 +87,12 @@ class Config {
         }
     }
 
-    static final class ConfigException extends RuntimeException {
+    /**
+     * Exception thrown when the config is incorrect
+     * @author mmakowski
+     * @since 1.0.0
+     */
+    public static final class ConfigException extends RuntimeException {
         private static final long serialVersionUID = 1L;
 
         public ConfigException(String path, String message) {
@@ -97,7 +100,7 @@ class Config {
         }
     }
     
-    private Config(final String host, final int port) {
+    protected Config(final String host, final int port) {
         this.host = host;
         this.port = port;
     }
@@ -114,5 +117,14 @@ class Config {
      */
     public int getPort() {
         return port;
+    }
+    
+    protected static class PropertyValidator {
+        public void validate(Properties properties, String configPath) {
+            final String host = properties.getProperty(SERVER_HOST);
+            if (host == null || host.length() == 0) throw new ConfigException(configPath, SERVER_HOST + " must be set to a non-empty host name");
+            final String portStr = properties.getProperty(SERVER_PORT);
+            if (portStr == null || Integer.valueOf(portStr) <= 0) throw new ConfigException(configPath, SERVER_PORT + " must be set to a positive integer");
+        }
     }
 }

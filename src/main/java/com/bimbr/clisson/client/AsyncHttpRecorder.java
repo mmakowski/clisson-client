@@ -63,13 +63,19 @@ final class AsyncHttpRecorder implements Recorder {
      * @see Recorder#event(Set, Set, String)
      */
     public void event(final Set<String> inputMessageIds, final Set<String> outputMessageIds, final String description) {
-        final Event event = new Event(sourceId, clock.getTime(), inputMessageIds, outputMessageIds, description);
+        event(new Event(sourceId, clock.getTime(), inputMessageIds, outputMessageIds, description));
+    }
+    
+    /**
+     * @see Recorder#event(Event)
+     */
+    public void event(final Event event) {
         final boolean enqueued = invocationBuffer.offer(new EventSubmission(event));
         if (!enqueued) {
             logger.error("buffer capacity of " + invocationBuffer.size() + " has been reached; unable to enqueue new invocations, dropping " + event);
         }
     }
-    
+
     private void startHttpInvocationThread() {
         logger.debug("staring HTTP invoker thread...");
         final Thread invocationThread = new Thread(new BufferProcessor(), "clisson-http-invoker");

@@ -26,12 +26,25 @@ import com.bimbr.util.Clock;
  */
 public final class RecorderFactory {
     /**
+     * Constructs a {@link Recorder} using the config specified in properties file.
      * @param sourceId the id of the source of events
      * @return a {@link Recorder} for specified source
+     * @since 1.0.0
      */
     public static Recorder getRecorder(final String sourceId) {
         final Config config = Config.fromPropertiesFile();
+        return getRecorder(sourceId, config);
+    }
+    
+    /**
+     * 
+     * @param sourceId
+     * @param config
+     * @return a {@link Recorder} for specified source with properties taken
+     * @since 1.0.0
+     */
+    public static Recorder getRecorder(final String sourceId, final Config config) {
         final HttpInvoker invoker = new HttpInvoker(config.getHost(), config.getPort());
-        return new AsyncHttpRecorder(sourceId, invoker, 1000, new Clock());
+        return new AsyncHttpRecorder(sourceId, invoker, 1000, new Clock());        
     }
 }

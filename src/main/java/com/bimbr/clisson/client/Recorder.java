@@ -2,6 +2,8 @@ package com.bimbr.clisson.client;
 
 import java.util.Set;
 
+import com.bimbr.clisson.protocol.Event;
+
 /**
  * Recorder provides methods for recording message events. These methods should never throw exceptions.
  * 
@@ -26,4 +28,11 @@ public interface Recorder {
      * @since 1.0.0
      */
     void event(Set<String> inputMessageIds, Set<String> outputMessageIds, String description);
+
+    /**
+     * Records an arbitrary, preconstructed {@link com.bimbr.clisson.protocol.Event}
+     * @param event the event to record
+     * @since 1.0.0
+     */
+    void event(Event event);
 }

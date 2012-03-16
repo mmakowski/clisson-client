@@ -8,6 +8,7 @@ import org.specs2.runner.JUnitRunner
 
 @RunWith(classOf[JUnitRunner])
 class ConfigSpec extends Specification {
+  import ConfigSpec._
   "Config construction" should {
     // these tests modify system properties so can't be run in parallel
     "use classpath's clisson.properties if clisson.config system property is not specified" in globally.synchronized {
@@ -54,10 +55,6 @@ class ConfigSpec extends Specification {
     }
   }
   
-  private def useDefaultConfig() = System clearProperty "clisson.config"
-  
-  private def useConfig(path: String) = System setProperty ("clisson.config", path)
-  
   private def useFileConfig(name: String) = {
     import java.io.{ File, FileOutputStream }
     import java.nio.channels.Channels._
@@ -71,4 +68,10 @@ class ConfigSpec extends Specification {
   trait trees extends After {
     def after = useDefaultConfig()
   }  
+}
+
+object ConfigSpec {
+  def useDefaultConfig() = System clearProperty "clisson.config"
+  
+  def useConfig(path: String) = System setProperty ("clisson.config", path)
 }

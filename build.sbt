@@ -12,6 +12,7 @@ homepage := Some(url("https://github.com/mmakowski/clisson-client"))
 
 libraryDependencies ++= Seq(
   "com.bimbr"                 % "clisson-protocol" % "0.1.0",
+  "log4j"                     % "log4j"            % "1.2.16",
   "org.apache.httpcomponents" % "httpclient"       % "4.1.3",
   "org.slf4j"                 % "slf4j-api"        % "1.6.4",
   "junit"                     % "junit"            % "4.10"            % "test", 
