@@ -25,7 +25,7 @@ class ClissonAppenderSpec extends Specification with Mockito {
     }
   }
   "ClissonAppender" should {
-    "record Clisson event from log4j Event using supplied EventTransformation" in {
+    "record Clisson event built from log4j Event using supplied EventTransformation" in {
       Appender.doAppend(Log4jEvent)
       there was one (Recorder).event(ClissonEvent)
     }

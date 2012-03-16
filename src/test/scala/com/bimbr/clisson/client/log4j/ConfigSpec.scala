@@ -13,7 +13,7 @@ import com.bimbr.clisson.client.Config.ConfigException
 class ConfigSpec extends com.bimbr.clisson.client.ConfigSpec {
   import com.bimbr.clisson.client.ConfigSpec._
   
-  "Config construction" should {
+  "log4j Config construction" should {
     // these tests modify system properties so can't be run in parallel
     "require that clisson.log4j.eventTransformation property points to a class implementing EventTransformation" in globally.synchronized {
       useConfig("classpath://log4j-wrong-transformation.properties")
