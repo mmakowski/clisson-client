@@ -9,7 +9,6 @@ import org.specs2.runner.JUnitRunner
 import com.bimbr.clisson.client.Recorder
 import com.bimbr.clisson.protocol.{ Event, Json }
 import com.bimbr.util.Clock
-
 import com.bimbr.clisson.client.globally
 import com.bimbr.clisson.client.ConfigSpec.useConfig
 import com.bimbr.clisson.client.TestServer.withServerOn
@@ -26,19 +25,27 @@ class ClissonAppenderSpec extends Specification with Mockito {
   }
   "ClissonAppender" should {
     "record Clisson event built from log4j Event using supplied EventTransformation" in {
-      Appender.doAppend(Log4jEvent)
-      there was one (Recorder).event(ClissonEvent)
+      val rec = recorder
+      appender(rec).doAppend(Log4jEvent)
+      there was one (rec).event(ClissonEvent)
+    }
+    "ignore events deemed ignorable by the transformation" in {
+      val rec = recorder
+      appender(rec).doAppend(IgnorableLog4jEvent)
+      there was no (rec).event(any[Event])
     }
   }
   
   val Transformation = mock[EventTransformation]
-  val Recorder = mock[Recorder]
-  val Appender = new ClissonAppender(Transformation, Recorder)
+  def recorder = mock[Recorder]
+  def appender(recorder: Recorder) = new ClissonAppender(Transformation, recorder)
   
   val Log4jEvent = mock[LoggingEvent]
+  val IgnorableLog4jEvent = mock[LoggingEvent]
   val ClissonEvent = mock[Event]
 
   Transformation.perform(Log4jEvent) returns ClissonEvent
+  Transformation.perform(IgnorableLog4jEvent) throws new EventTransformation.IgnoreEventException 
 }
 
 class TestTransformation extends EventTransformation {
