@@ -1,8 +1,11 @@
 package com.bimbr.clisson.client
 
+import java.util.concurrent.CountDownLatch
+
 import scala.collection.JavaConversions._
 
 import org.junit.runner.RunWith
+import org.slf4j.Logger
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
 import org.specs2.runner.JUnitRunner
@@ -37,16 +40,29 @@ class AsyncHttpRecorderSpec extends Specification with Mockito {
       there was one(invoker).post("/event", Json.jsonFor(GenericEvent))
     }
     "have event() return immediately even when the invoker is slow" in {
-      val invoker = slowInvoker(1000)
+      val invoker = new BlockedInvoker
       val callStartTime = System.currentTimeMillis
       recorder(invoker) event (InputMsgIds, OutputMsgIds, Description)
       val elapsedTime = System.currentTimeMillis - callStartTime
+      invoker.unblock()
       elapsedTime must beLessThan (MaxExpectedCallTimeMs)
     }
+    "throttle buffer full log messages so that the log file is not spammed" in {
+      val invoker = new BlockedInvoker
+      val logger = mock[Logger]
+      val record = recorder(invoker, logger)
+      fillBuffer(record)
+      // now keep on adding new ones for slightly longer that gag period
+      val startTime = System.currentTimeMillis()
+      while (System.currentTimeMillis() - startTime < 1.1 * LoggerGagPeriodMs) {
+        record.event(InputMsgIds, OutputMsgIds, Description)
+      }
+      invoker.unblock()
+      there were two(logger).warn(anyString)
+    } 
   }
 
   val Invoker = mock[HttpInvoker]
-  
   val Timestamp = new java.util.Date
   val Clock = mock[Clock]
   Clock.getTime() returns Timestamp
@@ -54,7 +70,9 @@ class AsyncHttpRecorderSpec extends Specification with Mockito {
   val PortBase = 31500
   val SrcId = "srcId"
   val BufferSize = 1
-  def recorder(invoker: HttpInvoker) = new AsyncHttpRecorder(SrcId, invoker, 1, Clock)
+  val Logger = mock[Logger]
+  val LoggerGagPeriodMs = 100
+  def recorder(invoker: HttpInvoker, logger: Logger = Logger) = new AsyncHttpRecorder(SrcId, invoker, 1, Clock, logger, LoggerGagPeriodMs)
   
   val MsgId = "msg-1"
   val Description = "test event"
@@ -63,8 +81,13 @@ class AsyncHttpRecorderSpec extends Specification with Mockito {
   val OutputMsgIds = Set("msg-3", "msg-4")
   val GenericEvent = new Event(SrcId, Timestamp, InputMsgIds, OutputMsgIds, Description)
   
-  def slowInvoker(timeToRespondInMillis: Int) = 
-    mock[HttpInvoker].post(anyString, anyString) answers {_ => Thread sleep (timeToRespondInMillis) }
+  class BlockedInvoker extends HttpInvoker {
+    val latch = new CountDownLatch(1)
+    override def post(s1: String, s2: String) = latch.await()
+    def unblock() = latch.countDown()
+  }
+  
+  def fillBuffer(record: Recorder) = (0 until 1000) foreach { _ => record.event(InputMsgIds, OutputMsgIds, Description) }
   
   val MaxExpectedInvocationDelayMs = 300
   val MaxExpectedCallTimeMs = 200L

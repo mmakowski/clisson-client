@@ -26,12 +26,17 @@ import com.bimbr.util.Clock;
  * @since 1.0.0
  */
 final class AsyncHttpRecorder implements Recorder {
-    private static final Logger logger = LoggerFactory.getLogger(AsyncHttpRecorder.class);
+    private static final int DEFAULT_LOGGER_GAG_PERIOD_MS = 5 * 60 * 1000;
+    private static final Logger DEFAULT_LOGGER = LoggerFactory.getLogger(AsyncHttpRecorder.class);
     
     private final String      sourceId;
     private final HttpInvoker invoker;
     private final Clock       clock;
-    private final BlockingQueue<HttpInvocation> invocationBuffer; 
+    private final BlockingQueue<HttpInvocation> invocationBuffer;
+    private final Logger      logger;
+    private final int         loggerGagPeriodMs;
+    
+    private long lastLogMessageTime;
     
     /**
      * @param sourceId the id of the component that is the source of events
@@ -43,10 +48,30 @@ final class AsyncHttpRecorder implements Recorder {
                       final HttpInvoker invoker,
                       final int         bufferSize,
                       final Clock       clock) {
+        this(sourceId, invoker, bufferSize, clock, DEFAULT_LOGGER, DEFAULT_LOGGER_GAG_PERIOD_MS);
+    }
+    
+    /**
+     * @param sourceId the id of the component that is the source of events
+     * @param invoker the {@link HttpInvoker} used to communicate with the server
+     * @paran bufferSize the size of internal buffer
+     * @param clock the {@link Clock} used to generate event timestamp
+     * @param logger the logger to use
+     * @param loggerGagPeriodMs the highest frequency (in 1/milliseconds) at which a single type of message will be logged  
+     */
+    AsyncHttpRecorder(final String      sourceId,
+                      final HttpInvoker invoker,
+                      final int         bufferSize,
+                      final Clock       clock,
+                      final Logger      logger,
+                      final int         loggerGagPeriodMs) {
         this.sourceId = nonEmpty(sourceId, "sourceId");
         this.invoker = nonNull(invoker, "invoker");
         this.invocationBuffer = new ArrayBlockingQueue<HttpInvocation>(positive(bufferSize, "bufferSize"));
         this.clock = nonNull(clock, "clock");
+        this.logger = nonNull(logger, "logger");
+        this.loggerGagPeriodMs = loggerGagPeriodMs;
+        
         startHttpInvocationThread();
     }
     
@@ -71,11 +96,16 @@ final class AsyncHttpRecorder implements Recorder {
      */
     public void event(final Event event) {
         final boolean enqueued = invocationBuffer.offer(new EventSubmission(event));
-        if (!enqueued) {
-            logger.error("buffer capacity of " + invocationBuffer.size() + " has been reached; unable to enqueue new invocations, dropping " + event);
+        if (!enqueued && isAllowedToLog()) {
+            logger.warn("buffer capacity of " + invocationBuffer.size() + " has been reached, unable to enqueue new invocations. Events will be missing!");
+            lastLogMessageTime = System.currentTimeMillis();
         }
     }
 
+    private boolean isAllowedToLog() {
+        return System.currentTimeMillis() - lastLogMessageTime > loggerGagPeriodMs;
+    }
+    
     private void startHttpInvocationThread() {
         logger.debug("staring HTTP invoker thread...");
         final Thread invocationThread = new Thread(new BufferProcessor(), "clisson-http-invoker");
@@ -105,7 +135,7 @@ final class AsyncHttpRecorder implements Recorder {
                 try {
                     invocationBuffer.take().invoke(invoker);
                 } catch (Exception e) {
-                    logger.error("error while invoking Clisson server over HTTP", e);
+                    logger.warn("error while invoking Clisson server over HTTP", e);
                 }
             }
         }

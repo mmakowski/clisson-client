@@ -58,7 +58,7 @@ public final class RecorderFactory {
     }
 
     private static Recorder recorder(String sourceId, Config config) {
-        final HttpInvoker invoker = new HttpInvoker(config.getHost(), config.getPort());
+        final SimpleHttpInvoker invoker = new SimpleHttpInvoker(config.getHost(), config.getPort());
         return new AsyncHttpRecorder(sourceId, invoker, 1000, new Clock());        
     }
 }
