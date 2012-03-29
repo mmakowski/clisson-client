@@ -52,16 +52,26 @@ class AsyncHttpRecorderSpec extends Specification with Mockito {
       val logger = mock[Logger]
       val record = recorder(invoker, logger)
       fillBuffer(record)
-      // now keep on adding new ones for slightly longer that gag period
-      val startTime = System.currentTimeMillis()
-      while (System.currentTimeMillis() - startTime < 1.1 * LoggerGagPeriodMs) {
-        record.event(InputMsgIds, OutputMsgIds, Description)
-      }
+      recordEventsFor(PeriodThatAllowsTwoLogMessages, record)
       invoker.unblock()
       there were two(logger).warn(anyString)
     } 
+    "throttle server invocation error log messages so that the log file is not spammed" in {
+      val invoker = failingInvoker()
+      val logger = mock[Logger]
+      val record = recorder(invoker, logger)
+      recordEventsFor(PeriodThatAllowsTwoLogMessages, record)
+      there were two(logger).warn(anyString, any[Exception])
+    }
   }
 
+  def recordEventsFor(timeMs: Long, record: Recorder) = {
+      val startTime = System.currentTimeMillis()
+      while (System.currentTimeMillis() - startTime < timeMs) {
+        record.event(InputMsgIds, OutputMsgIds, Description)
+      }
+  } 
+  
   val Invoker = mock[HttpInvoker]
   val Timestamp = new java.util.Date
   val Clock = mock[Clock]
@@ -71,7 +81,8 @@ class AsyncHttpRecorderSpec extends Specification with Mockito {
   val SrcId = "srcId"
   val BufferSize = 1
   val Logger = mock[Logger]
-  val LoggerGagPeriodMs = 100
+  val LoggerGagPeriodMs = 750
+  val PeriodThatAllowsTwoLogMessages = (1.1 * LoggerGagPeriodMs).toLong
   def recorder(invoker: HttpInvoker, logger: Logger = Logger) = new AsyncHttpRecorder(SrcId, invoker, 1, Clock, logger, LoggerGagPeriodMs)
   
   val MsgId = "msg-1"
@@ -85,6 +96,12 @@ class AsyncHttpRecorderSpec extends Specification with Mockito {
     val latch = new CountDownLatch(1)
     override def post(s1: String, s2: String) = latch.await()
     def unblock() = latch.countDown()
+  }
+  
+  def failingInvoker() = {
+    val invoker = mock[HttpInvoker]
+    invoker.post(anyString, anyString) throws (new RuntimeException("test error"))
+    invoker
   }
   
   def fillBuffer(record: Recorder) = (0 until 1000) foreach { _ => record.event(InputMsgIds, OutputMsgIds, Description) }

@@ -27,6 +27,12 @@ class HttpInvokerSpec extends Specification with Mockito {
       invoker(1) post (Uri, Content)
       server.requestReceived mustEqual Some(("POST", Uri, Content)) 
     }
+    "throw a RuntimeException when status code is >= 400" in withServerOn(port(2)) { server =>
+      invoker(2).post(TestServer.ErrorUri, Content) must throwA [RuntimeException] 
+    }
+    "throw a RuntimeException when the URI format is invalid" in {
+      invoker(3).post(InvalidUri, Content) must throwA [RuntimeException]
+    }
   }
   
   val Host = "localhost"
@@ -34,5 +40,6 @@ class HttpInvokerSpec extends Specification with Mockito {
   def port(instance: Int) = PortBase + instance
   def invoker(instance: Int) = new SimpleHttpInvoker(Host, port(instance))
   val Uri = "/some/uri"
+  val InvalidUri = "a#adf#adsf#"
   val Content = """some content -- newlines are not guaranteed to be preserved, but UTF-8 characters like Թ should!"""
 }

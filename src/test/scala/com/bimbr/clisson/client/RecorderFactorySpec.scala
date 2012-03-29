@@ -19,7 +19,7 @@ class RecorderFactorySpec extends Specification {
         val recorder = RecorderFactory.getRecorder(SrcId)
         System clearProperty "clisson.config"
         recorder.event(InputMsgIds, OutputMsgIds, Description)
-        Thread sleep 1000 // submission is asynchronous, need to allow some time for it
+        server.waitUntilRequestReceived(5000)
         server.requestReceived must beSome.like {
           case ("POST", "/event", str) => Json.fromJson[Event](str, classOf[Event]).getDescription mustEqual Description  
         }

@@ -36,7 +36,7 @@ final class AsyncHttpRecorder implements Recorder {
     private final Logger      logger;
     private final int         loggerGagPeriodMs;
     
-    private long lastLogMessageTime;
+    private volatile long     lastLogMessageTime;
     
     /**
      * @param sourceId the id of the component that is the source of events
@@ -96,13 +96,13 @@ final class AsyncHttpRecorder implements Recorder {
      */
     public void event(final Event event) {
         final boolean enqueued = invocationBuffer.offer(new EventSubmission(event));
-        if (!enqueued && isAllowedToLog()) {
+        if (!enqueued && isAllowedToLog(lastLogMessageTime)) {
             logger.warn("buffer capacity of " + invocationBuffer.size() + " has been reached, unable to enqueue new invocations. Events will be missing!");
             lastLogMessageTime = System.currentTimeMillis();
         }
     }
 
-    private boolean isAllowedToLog() {
+    private boolean isAllowedToLog(long lastLogMessageTime) {
         return System.currentTimeMillis() - lastLogMessageTime > loggerGagPeriodMs;
     }
     
@@ -117,6 +117,7 @@ final class AsyncHttpRecorder implements Recorder {
     private static interface HttpInvocation {
         void invoke(HttpInvoker invoker);
     }
+    
     private static final class EventSubmission implements HttpInvocation {
         private final Event event;
         
@@ -130,12 +131,17 @@ final class AsyncHttpRecorder implements Recorder {
     }
     
     private final class BufferProcessor implements Runnable {
+        private volatile long lastLogMessageTime;
+        
         public void run() {
             while (true) {
                 try {
                     invocationBuffer.take().invoke(invoker);
                 } catch (Exception e) {
-                    logger.warn("error while invoking Clisson server over HTTP", e);
+                    if (isAllowedToLog(lastLogMessageTime)) {
+                        logger.warn("error while invoking Clisson server over HTTP", e);
+                        lastLogMessageTime = System.currentTimeMillis();
+                    }
                 }
             }
         }

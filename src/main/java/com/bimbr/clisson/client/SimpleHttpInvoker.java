@@ -1,6 +1,7 @@
 package com.bimbr.clisson.client;
 
-import static com.bimbr.clisson.util.Arguments.*;
+import static com.bimbr.clisson.util.Arguments.nonEmpty;
+import static com.bimbr.clisson.util.Arguments.positive;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -14,8 +15,6 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URIUtils;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * A no-frills implementation of {@link HttpInvoker}.
@@ -24,8 +23,6 @@ import org.slf4j.LoggerFactory;
  * @since 1.0.0
  */
 class SimpleHttpInvoker implements HttpInvoker {
-    private static final Logger logger = LoggerFactory.getLogger(SimpleHttpInvoker.class);
-
     private final String serverHost;
     private final int serverPort;
     
@@ -48,9 +45,9 @@ class SimpleHttpInvoker implements HttpInvoker {
             request.setEntity(entityFor(content));
             sendRequest(request);
         } catch (URISyntaxException e) {
-            logger.error("invalid URI: " + uri, e);
+            throw new RuntimeException("invalid URI: " + uri, e);
         } catch (IOException e) {
-            logger.error("error when posting to " + url(uri), e);
+            throw new RuntimeException("error when posting to " + url(uri), e);
         }
     }
 
@@ -62,7 +59,7 @@ class SimpleHttpInvoker implements HttpInvoker {
         final HttpClient client = new DefaultHttpClient();
         final HttpResponse response = client.execute(request);
         if (response.getStatusLine().getStatusCode() >= 400) {
-            logger.error("response to " + request.getMethod() + " " + request.getURI() + ": " + response);
+            throw new RuntimeException("response to " + request.getMethod() + " " + request.getURI() + ": " + response);
         }
     }
 
