@@ -21,7 +21,7 @@ class TestServer(port: Int) {
       httpResponse setContentType "text/plain"
       httpResponse.setStatus(requestReceived match {
         case Some((_, TestServer.ErrorUri, _)) => SC_BAD_REQUEST
-        case _                      => SC_OK
+        case _                                 => SC_OK
       })
       httpRequest.asInstanceOf[org.mortbay.jetty.Request] setHandled true
       receivedLatch.countDown()

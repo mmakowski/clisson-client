@@ -29,6 +29,7 @@ final class AsyncHttpRecorder implements Recorder {
     private static final int DEFAULT_LOGGER_GAG_PERIOD_MS = 5 * 60 * 1000;
     private static final Logger DEFAULT_LOGGER = LoggerFactory.getLogger(AsyncHttpRecorder.class);
     
+    private final boolean     enabled;
     private final String      sourceId;
     private final HttpInvoker invoker;
     private final Clock       clock;
@@ -39,19 +40,22 @@ final class AsyncHttpRecorder implements Recorder {
     private volatile long     lastLogMessageTime;
     
     /**
+     * @param enabled if set to {@code false}, invocations of the constructed recorder will not have any effect
      * @param sourceId the id of the component that is the source of events
      * @param invoker the {@link HttpInvoker} used to communicate with the server
      * @paran bufferSize the size of internal buffer
      * @param clock the {@link Clock} used to generate event timestamp
      */
-    AsyncHttpRecorder(final String      sourceId,
+    AsyncHttpRecorder(final boolean     enabled,
+                      final String      sourceId,
                       final HttpInvoker invoker,
                       final int         bufferSize,
                       final Clock       clock) {
-        this(sourceId, invoker, bufferSize, clock, DEFAULT_LOGGER, DEFAULT_LOGGER_GAG_PERIOD_MS);
+        this(enabled, sourceId, invoker, bufferSize, clock, DEFAULT_LOGGER, DEFAULT_LOGGER_GAG_PERIOD_MS);
     }
     
     /**
+     * @param enabled if set to {@code false}, invocations of the constructed recorder will not have any effect
      * @param sourceId the id of the component that is the source of events
      * @param invoker the {@link HttpInvoker} used to communicate with the server
      * @paran bufferSize the size of internal buffer
@@ -59,12 +63,14 @@ final class AsyncHttpRecorder implements Recorder {
      * @param logger the logger to use
      * @param loggerGagPeriodMs the highest frequency (in 1/milliseconds) at which a single type of message will be logged  
      */
-    AsyncHttpRecorder(final String      sourceId,
+    AsyncHttpRecorder(final boolean     enabled,
+                      final String      sourceId,
                       final HttpInvoker invoker,
                       final int         bufferSize,
                       final Clock       clock,
                       final Logger      logger,
                       final int         loggerGagPeriodMs) {
+        this.enabled = enabled;
         this.sourceId = nonEmpty(sourceId, "sourceId");
         this.invoker = nonNull(invoker, "invoker");
         this.invocationBuffer = new ArrayBlockingQueue<HttpInvocation>(positive(bufferSize, "bufferSize"));
@@ -95,10 +101,12 @@ final class AsyncHttpRecorder implements Recorder {
      * @see Recorder#event(Event)
      */
     public void event(final Event event) {
-        final boolean enqueued = invocationBuffer.offer(new EventSubmission(event));
-        if (!enqueued && isAllowedToLog(lastLogMessageTime)) {
-            logger.warn("buffer capacity of " + invocationBuffer.size() + " has been reached, unable to enqueue new invocations. Events will be missing!");
-            lastLogMessageTime = System.currentTimeMillis();
+        if (enabled) {
+            final boolean enqueued = invocationBuffer.offer(new EventSubmission(event));
+            if (!enqueued && isAllowedToLog(lastLogMessageTime)) {
+                logger.warn("buffer capacity of " + invocationBuffer.size() + " has been reached, unable to enqueue new invocations. Events will be missing!");
+                lastLogMessageTime = System.currentTimeMillis();
+            }
         }
     }
 

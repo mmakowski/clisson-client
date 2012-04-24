@@ -21,15 +21,19 @@ public class Config {
     private static final String CONFIG_PROPERTY = "clisson.config";
     private static final String DEFAULT_CONFIG_PATH = CLASSPATH_PREFIX + "clisson.properties";
     
-    protected static final String SERVER_HOST = "clisson.server.host";
-    protected static final String SERVER_PORT = "clisson.server.port";
+    protected static final String RECORD_ENABLED = "clisson.record.enabled";
+    protected static final String SERVER_HOST    = "clisson.server.host";
+    protected static final String SERVER_PORT    = "clisson.server.port";
     
     private final String host;
     private final int port;
+    private final boolean isRecordingEnabled;
     
     public static Config fromPropertiesFile() {
         final Properties properties = validatedProperties(new PropertyValidator());
-        return new Config(properties.getProperty(SERVER_HOST), Integer.valueOf(properties.getProperty(SERVER_PORT)));
+        return new Config(Boolean.valueOf(properties.getProperty(RECORD_ENABLED, "true")),
+                          properties.getProperty(SERVER_HOST), 
+                          Integer.valueOf(properties.getProperty(SERVER_PORT)));
     }
     
     protected static Properties validatedProperties(PropertyValidator propertyValidator) {
@@ -100,9 +104,12 @@ public class Config {
         }
     }
     
-    protected Config(final String host, final int port) {
-        this.host = host;
-        this.port = port;
+    protected Config(final boolean isRecordingEnabled, 
+                     final String  host, 
+                     final int     port) {
+        this.isRecordingEnabled = isRecordingEnabled;
+        this.host               = host;
+        this.port               = port;
     }
 
     /**
@@ -117,6 +124,13 @@ public class Config {
      */
     public int getPort() {
         return port;
+    }
+    
+    /**
+     * @return {@code true} if event recording is enabled, {@code false} otherwise  
+     */
+    public boolean isRecordingEnabled() {
+        return isRecordingEnabled;
     }
     
     protected static class PropertyValidator {

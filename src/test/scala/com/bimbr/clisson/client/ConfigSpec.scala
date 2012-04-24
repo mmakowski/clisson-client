@@ -54,6 +54,18 @@ class ConfigSpec extends Specification {
       (config.getHost, config.getPort) mustEqual ("valid.host", 4114)
     }
   }
+  "Config" should {
+    "have isEnabled set to true if clisson.record.enabled property is not specified" in globally.synchronized {
+      useDefaultConfig()
+      val config = Config fromPropertiesFile()
+      config.isRecordingEnabled mustEqual (true)
+    }
+    "have isEnabled set to false if clisson.record.enabled property is set to false" in globally.synchronized {
+      useFileConfig("disabled.properties")
+      val config = Config fromPropertiesFile()
+      config.isRecordingEnabled mustEqual (false)
+    }
+  }
   
   private def useFileConfig(name: String) = {
     import java.io.{ File, FileOutputStream }

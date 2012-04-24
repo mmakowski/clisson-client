@@ -17,13 +17,13 @@ import com.bimbr.util.Clock
 class AsyncHttpRecorderSpec extends Specification with Mockito {
   "AsyncHttpRecorder construction" should {
     "require non-empty source" in {
-      new AsyncHttpRecorder("", Invoker, BufferSize, Clock) must throwAn [IllegalArgumentException]
+      new AsyncHttpRecorder(true, "", Invoker, BufferSize, Clock) must throwAn [IllegalArgumentException]
     }
     "require non-null invoker" in {
-      new AsyncHttpRecorder(SrcId, null, BufferSize, Clock) must throwAn [IllegalArgumentException]
+      new AsyncHttpRecorder(true, SrcId, null, BufferSize, Clock) must throwAn [IllegalArgumentException]
     }
     "require positive buffer size" in {
-      new AsyncHttpRecorder(SrcId, Invoker, 0, Clock) must throwAn [IllegalArgumentException]
+      new AsyncHttpRecorder(true, SrcId, Invoker, 0, Clock) must throwAn [IllegalArgumentException]
     }
   }
   "AsyncHttpRecorder" should {
@@ -63,6 +63,14 @@ class AsyncHttpRecorderSpec extends Specification with Mockito {
       recordEventsFor(PeriodThatAllowsTwoLogMessages, record)
       there were two(logger).warn(anyString, any[Exception])
     }
+    "not record any events if constructed disabled" in {
+      val invoker = mock[HttpInvoker]
+      val logger = mock[Logger]
+      val record = new AsyncHttpRecorder(false, SrcId, invoker, 1, Clock, logger, LoggerGagPeriodMs)
+      record event (InputMsgIds, OutputMsgIds, Description)
+      Thread sleep MaxExpectedInvocationDelayMs
+      there was no(invoker).post(anyString, anyString)
+    }
   }
 
   def recordEventsFor(timeMs: Long, record: Recorder) = {
@@ -81,9 +89,9 @@ class AsyncHttpRecorderSpec extends Specification with Mockito {
   val SrcId = "srcId"
   val BufferSize = 1
   val Logger = mock[Logger]
-  val LoggerGagPeriodMs = 750
-  val PeriodThatAllowsTwoLogMessages = (1.1 * LoggerGagPeriodMs).toLong
-  def recorder(invoker: HttpInvoker, logger: Logger = Logger) = new AsyncHttpRecorder(SrcId, invoker, 1, Clock, logger, LoggerGagPeriodMs)
+  val LoggerGagPeriodMs = 1000
+  val PeriodThatAllowsTwoLogMessages = (1.5 * LoggerGagPeriodMs).toLong
+  def recorder(invoker: HttpInvoker, logger: Logger = Logger) = new AsyncHttpRecorder(true, SrcId, invoker, 1, Clock, logger, LoggerGagPeriodMs)
   
   val MsgId = "msg-1"
   val Description = "test event"

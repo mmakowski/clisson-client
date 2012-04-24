@@ -18,11 +18,15 @@ import com.bimbr.util.Clock;
  * <li>{@code file://c:/myapp/conf/clisson.properties}</li>
  * </ul>
  * <p>
- * The config file must contain the following properties:
- * <ul>
- * <li>{@code clisson.server.host} - the host name of Clisson server</li>
- * <li>{@code clisson.server.port} - the port on which Clisson server listens</li>
- * </ul>
+ * The following properties are supported:
+ * <table>
+ * <thead>
+ * <tr><td>property</td><td>required</td><td>default value</td><td>description</td></tr>
+ * </thead>
+ * <tr><td>{@code clisson.record.enabled}</td><td>no</td><td>{@code true}</td><td>whether sending of events to the server is enabled</td></tr>
+ * <tr><td>{@code clisson.server.host}</td><td>yes</td><td></td><td>the host name of Clisson server</td></tr>
+ * <tr><td>{@code clisson.server.port}</td><td>yes</td><td></td><td>the port on which Clisson server listens</td></tr>
+ * </table>
  * <p>
  * The factory guarantees to create only a single instance of recorder for each {@code sourceId}.
  * 
@@ -51,14 +55,23 @@ public final class RecorderFactory {
      * @since 1.0.0
      */
     public static Recorder getRecorder(final String sourceId, final Config config) {
-        if (!recorders.containsKey(sourceId)) {
-            recorders.put(sourceId, recorder(sourceId, config));
+        synchronized (recorders) {
+            if (!recorders.containsKey(sourceId)) {
+                recorders.put(sourceId, recorder(sourceId, config));
+            }
+            return recorders.get(sourceId);
         }
-        return  recorders.get(sourceId);
     }
 
     private static Recorder recorder(String sourceId, Config config) {
         final SimpleHttpInvoker invoker = new SimpleHttpInvoker(config.getHost(), config.getPort());
-        return new AsyncHttpRecorder(sourceId, invoker, 1000, new Clock());        
+        return new AsyncHttpRecorder(config.isRecordingEnabled(), sourceId, invoker, 1000, new Clock());        
+    }
+    
+    /**
+     * for resetting cached Recorders in tests
+     */
+    static void reset() {
+        recorders.clear();
     }
 }

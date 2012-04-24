@@ -13,17 +13,14 @@ import TestServer.withServerOn
 @RunWith(classOf[JUnitRunner])
 class RecorderFactorySpec extends Specification {
   "RecorderFactory" should {
-    "create a recorder capable of submitting a valid event to the server" in globally.synchronized { 
-      withServerOn(37171) { server =>
-        System setProperty ("clisson.config", "classpath://local-test.properties")
-        val recorder = RecorderFactory.getRecorder(SrcId)
-        System clearProperty "clisson.config"
-        recorder.event(InputMsgIds, OutputMsgIds, Description)
-        server.waitUntilRequestReceived(5000)
-        server.requestReceived must beSome.like {
+    "create a recorder capable of submitting a valid event to the server" in globally.synchronized {
+      recordWithPropertiesAndExpect(37171, "classpath://local-test.properties", beSome.like {
           case ("POST", "/event", str) => Json.fromJson[Event](str, classOf[Event]).getDescription mustEqual Description  
         }
-      }
+      )
+    }
+    "create a disabled recorder if clisson.record.enabled config property is set to false" in globally.synchronized {
+      recordWithPropertiesAndExpect(37172, "classpath://local-test-disabled.properties", beNone)
     }
     "return the same instance of recorder whenever a recorder with specific source id is requested" in globally.synchronized {
       System clearProperty "clisson.config"
@@ -33,6 +30,18 @@ class RecorderFactorySpec extends Specification {
     }
   }
 
+  def recordWithPropertiesAndExpect(port: Int, propertiesPath: String, beAsExpected: org.specs2.matcher.Matcher[Option[(String, String, String)]]): org.specs2.execute.Result =
+    withServerOn(port) { server =>
+      RecorderFactory.reset()
+      System setProperty ("clisson.config", propertiesPath)
+      val recorder = RecorderFactory.getRecorder(SrcId)
+      System clearProperty "clisson.config"
+      recorder.event(InputMsgIds, OutputMsgIds, Description)
+      server.waitUntilRequestReceived(RecordingTimeOutMs)
+      server.requestReceived must beAsExpected
+    }
+  
+  val RecordingTimeOutMs = 5000
   val SrcId = "factory-test"
   val Description = "test event"
   val InputMsgIds = Set("msg-1", "msg-2")
