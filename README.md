@@ -10,7 +10,7 @@ In your Maven/SBT/ivy/whatever file add the following dependency:
 
 * group: `com.bimbr`
 * artifactId: `clisson-client`
-* version: `0.1.2`
+* version: `0.2.0`
 
 Configuration
 -------------
