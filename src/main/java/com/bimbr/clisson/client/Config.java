@@ -8,6 +8,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * Represents the configuration of the recorder and provides a way to read the configuration from
  * a properties file.
@@ -16,10 +19,14 @@ import java.util.Properties;
  * @since 1.0.0
  */
 public class Config {
+    private static final Logger log = LoggerFactory.getLogger(Config.class);
+    
     private static final String CLASSPATH_PREFIX = "classpath://";
     private static final String FILE_PREFIX = "file://";
     private static final String CONFIG_PROPERTY = "clisson.config";
     private static final String DEFAULT_CONFIG_PATH = CLASSPATH_PREFIX + "clisson.properties";
+    /** this config will be used if the file supplied by the user or the default config file are not found */
+    private static final String FALLBACK_CONFIG_PATH = CLASSPATH_PREFIX + "__clisson-fallback.properties";
     
     protected static final String RECORD_ENABLED = "clisson.record.enabled";
     protected static final String SERVER_HOST    = "clisson.server.host";
@@ -55,7 +62,9 @@ public class Config {
             properties.load(stream);
             return properties;
         } catch (FileNotFoundException e) {
-            throw new IllegalStateException("config file " + propertiesPath + " not found");
+            final Properties defaultProperties = propertiesFromFile(FALLBACK_CONFIG_PATH);
+            log.warn("config file " + propertiesPath + " not found; will use default properties: " + defaultProperties);
+            return defaultProperties;
         } catch (IOException e) {
             throw new IllegalStateException("error when loading Clisson client properties from " + propertiesPath, e);
         } finally {

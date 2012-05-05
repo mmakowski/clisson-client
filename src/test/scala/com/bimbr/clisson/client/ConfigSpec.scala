@@ -22,12 +22,11 @@ class ConfigSpec extends Specification {
         case e => e.getMessage must (contain("classpath://") and contain("file://"))
       }
     }
-    "report missing file's name when config file is missing from classpath" in globally.synchronized {
+    "create config with disabled recording when config is missing from classpath" in globally.synchronized {
       val missingPath = "classpath://missing.properties"
       useConfig(missingPath)
-      Config fromPropertiesFile() must throwAn [IllegalStateException].like {
-        case e => e.getMessage must contain (missingPath)
-      }
+      val config = Config fromPropertiesFile() 
+      config.isRecordingEnabled mustEqual false
     }
     "require that clisson.server.host property is non-empty" in globally.synchronized {
       useConfig("classpath://empty-host.properties")
@@ -41,12 +40,11 @@ class ConfigSpec extends Specification {
         case e => e.getMessage must contain ("clisson.server.port")
       }
     }
-    "report the missing file's name when config is missing from filesystem" in globally.synchronized {
+    "create config with disabled recording when config is missing from filesystem" in globally.synchronized {
       val missingPath = "file://does/not/exist.properties"
       useConfig(missingPath)
-      Config fromPropertiesFile() must throwAn [IllegalStateException].like {
-        case e => e.getMessage must contain (missingPath)
-      }
+      val config = Config fromPropertiesFile() 
+      config.isRecordingEnabled mustEqual false
     }
     "search the filesystem when path is prefixed with file://" in globally.synchronized {
       useFileConfig("valid.properties")
