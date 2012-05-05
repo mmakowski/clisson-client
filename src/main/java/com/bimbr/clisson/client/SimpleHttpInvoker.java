@@ -15,6 +15,7 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URIUtils;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.util.EntityUtils;
 
 /**
  * A no-frills implementation of {@link HttpInvoker}.
@@ -24,7 +25,11 @@ import org.apache.http.impl.client.DefaultHttpClient;
  */
 class SimpleHttpInvoker implements HttpInvoker {
     private final String serverHost;
-    private final int serverPort;
+    private final int    serverPort;
+
+    // according to old 3.x HttpClient docs, it's better for performance if a single instance of client is shared between 
+    // requests
+    private final HttpClient client = new DefaultHttpClient();
     
     /**
      * @param serverHost the host name of Clisson server, not including protocol and port, e.g.
@@ -56,8 +61,10 @@ class SimpleHttpInvoker implements HttpInvoker {
     }
 
     private void sendRequest(HttpPost request) throws ClientProtocolException, IOException {
-        final HttpClient client = new DefaultHttpClient();
         final HttpResponse response = client.execute(request);
+        // consume the response content to release connection for further requests
+        // see http://stackoverflow.com/questions/4612573/exception-using-httprequest-execute-invalid-use-of-singleclientconnmanager-c
+        EntityUtils.consume(response.getEntity());
         if (response.getStatusLine().getStatusCode() >= 400) {
             throw new RuntimeException("response to " + request.getMethod() + " " + request.getURI() + ": " + response);
         }
