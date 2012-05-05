@@ -28,19 +28,22 @@ public class Config {
     /** this config will be used if the file supplied by the user or the default config file are not found */
     private static final String FALLBACK_CONFIG_PATH = CLASSPATH_PREFIX + "__clisson-fallback.properties";
     
+    protected static final String COMPONENT_ID   = "clisson.componentId";
     protected static final String RECORD_ENABLED = "clisson.record.enabled";
     protected static final String SERVER_HOST    = "clisson.server.host";
     protected static final String SERVER_PORT    = "clisson.server.port";
     
     private final String host;
     private final int port;
+    private final String componentId;
     private final boolean isRecordingEnabled;
     
     public static Config fromPropertiesFile() {
         final Properties properties = validatedProperties(new PropertyValidator());
         return new Config(Boolean.valueOf(properties.getProperty(RECORD_ENABLED, "true")),
                           properties.getProperty(SERVER_HOST), 
-                          Integer.valueOf(properties.getProperty(SERVER_PORT)));
+                          Integer.valueOf(properties.getProperty(SERVER_PORT)),
+                          properties.getProperty(COMPONENT_ID));
     }
     
     protected static Properties validatedProperties(PropertyValidator propertyValidator) {
@@ -115,10 +118,12 @@ public class Config {
     
     protected Config(final boolean isRecordingEnabled, 
                      final String  host, 
-                     final int     port) {
+                     final int     port,
+                     final String  componentId) {
         this.isRecordingEnabled = isRecordingEnabled;
         this.host               = host;
         this.port               = port;
+        this.componentId        = componentId;
     }
 
     /**
@@ -136,6 +141,13 @@ public class Config {
     }
     
     /**
+     * @return the component identifier used to mark recorded events
+     */
+    public String getComponentId() {
+        return componentId;
+    }
+    
+    /**
      * @return {@code true} if event recording is enabled, {@code false} otherwise  
      */
     public boolean isRecordingEnabled() {
@@ -144,10 +156,20 @@ public class Config {
     
     protected static class PropertyValidator {
         public void validate(Properties properties, String configPath) {
-            final String host = properties.getProperty(SERVER_HOST);
-            if (host == null || host.length() == 0) throw new ConfigException(configPath, SERVER_HOST + " must be set to a non-empty host name");
+            validateNotEmptyString(properties, configPath, SERVER_HOST, "host name");
             final String portStr = properties.getProperty(SERVER_PORT);
             if (portStr == null || Integer.valueOf(portStr) <= 0) throw new ConfigException(configPath, SERVER_PORT + " must be set to a positive integer");
+            validateNotEmptyString(properties, configPath, COMPONENT_ID, "component identifier");
+        }
+
+        private void validateNotEmptyString(Properties properties,
+                String configPath, String propertyKey, String propertyDescription) {
+            final String host = properties.getProperty(propertyKey);
+            if (isEmpty(host)) throw new ConfigException(configPath, propertyKey + " must be set to a non-empty " + propertyDescription);
+        }
+
+        private static boolean isEmpty(final String str) {
+            return str == null || str.length() == 0;
         }
     }
 }

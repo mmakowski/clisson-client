@@ -40,6 +40,12 @@ class ConfigSpec extends Specification {
         case e => e.getMessage must contain ("clisson.server.port")
       }
     }
+    "require that clisson.componentId property is non-empty" in globally.synchronized {
+      useConfig("classpath://empty-componentId.properties")
+      Config fromPropertiesFile() must throwAn [Config.ConfigException].like {
+        case e => e.getMessage must contain ("clisson.componentId")
+      }
+    }
     "create config with disabled recording when config is missing from filesystem" in globally.synchronized {
       val missingPath = "file://does/not/exist.properties"
       useConfig(missingPath)
@@ -71,6 +77,7 @@ class ConfigSpec extends Specification {
     val tempDir = System getProperty "java.io.tmpdir"
     val src = Thread.currentThread.getContextClassLoader.getResourceAsStream(name);
     val dest = new File(tempDir + "/" + name)
+    if (dest.exists) dest.delete()
     new FileOutputStream(dest) getChannel() transferFrom(newChannel(src), 0, Long.MaxValue)
     useConfig("file://" + dest)
   } 

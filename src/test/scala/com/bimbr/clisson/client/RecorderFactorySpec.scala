@@ -22,10 +22,10 @@ class RecorderFactorySpec extends Specification {
     "create a disabled recorder if clisson.record.enabled config property is set to false" in globally.synchronized {
       recordWithPropertiesAndExpect(37172, "classpath://local-test-disabled.properties", beNone)
     }
-    "return the same instance of recorder whenever a recorder with specific source id is requested" in globally.synchronized {
+    "return the same instance of recorder whenever a recorder is requested" in globally.synchronized {
       System clearProperty "clisson.config"
-      val recorder1 = RecorderFactory.getRecorder(SrcId)
-      val recorder2 = RecorderFactory.getRecorder(SrcId)
+      val recorder1 = RecorderFactory.getRecorder()
+      val recorder2 = RecorderFactory.getRecorder()
       recorder1 must be (recorder2)
     }
   }
@@ -34,7 +34,7 @@ class RecorderFactorySpec extends Specification {
     withServerOn(port) { server =>
       RecorderFactory.reset()
       System setProperty ("clisson.config", propertiesPath)
-      val recorder = RecorderFactory.getRecorder(SrcId)
+      val recorder = RecorderFactory.getRecorder()
       System clearProperty "clisson.config"
       recorder.event(InputMsgIds, OutputMsgIds, Description)
       server.waitUntilRequestReceived(RecordingTimeOutMs)
@@ -42,7 +42,6 @@ class RecorderFactorySpec extends Specification {
     }
   
   val RecordingTimeOutMs = 5000
-  val SrcId = "factory-test"
   val Description = "test event"
   val InputMsgIds = Set("msg-1", "msg-2")
   val OutputMsgIds = Set("msg-3", "msg-4")

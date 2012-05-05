@@ -32,7 +32,7 @@ public final class ClissonAppender extends AppenderSkeleton {
     public ClissonAppender() {
         final Config config = Config.fromPropertiesFile();
         this.transformation = newInstanceOf(config.getTransformationClass());
-        this.record         = RecorderFactory.getRecorder("log4j", config);
+        this.record         = RecorderFactory.getRecorder(config);
     }
 
     private EventTransformation newInstanceOf(final Class<EventTransformation> transformationClass) { 

@@ -23,12 +23,17 @@ class Config extends com.bimbr.clisson.client.Config {
         return new Config(Boolean.valueOf(properties.getProperty(RECORD_ENABLED, "true")),
                           properties.getProperty(SERVER_HOST), 
                           Integer.valueOf(properties.getProperty(SERVER_PORT)),
+                          properties.getProperty(COMPONENT_ID),
                           properties.getProperty(LOG4J_EVENTTRANSFORMATION));
     }
 
     @SuppressWarnings("unchecked") // loading class dynamically
-    private Config(final boolean isRecordingEnabled, final String host, final int port, final String className) {
-        super(isRecordingEnabled, host, port);
+    private Config(final boolean isRecordingEnabled, 
+                   final String  host, 
+                   final int     port,
+                   final String  componentId,
+                   final String  className) {
+        super(isRecordingEnabled, host, port, componentId);
         try {
             transformationClass = (Class<EventTransformation>) Thread.currentThread().getContextClassLoader().loadClass(className);
         } catch (ClassNotFoundException e) {
