@@ -25,6 +25,10 @@ The config file must contain the following properties:
 * `clisson.server.host` - the host name of [Clisson server](https://github.com/mmakowski/clisson-server)
 * `clisson.server.port` - the port on which Clisson server listens
 
+The config file may contain the following properties:
+
+* `clisson.record.enabled` - whether sending of events to the server is enabled (default: `true`)
+
 Usage
 -----
 
